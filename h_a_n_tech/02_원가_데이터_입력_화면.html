@@ -1,0 +1,669 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>원가 데이터 입력 - SCMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header .subtitle {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb {
+            background-color: #ecf0f1;
+            padding: 0.75rem 2rem;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .form-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e1e8ed;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-section {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .form-control-lg {
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-addon {
+            background-color: #e9ecef;
+            padding: 0.75rem 1rem;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .cost-breakdown {
+            grid-column: 1 / -1;
+        }
+
+        .cost-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .cost-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .cost-item label {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .summary-title {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .summary-amount {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #27ae60;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .quick-templates {
+            background-color: #fff3cd;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .template-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-template {
+            padding: 0.5rem 1rem;
+            background-color: #ffc107;
+            color: #212529;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+
+        .btn-template:hover {
+            background-color: #e0a800;
+        }
+
+        .validation-message {
+            font-size: 0.8rem;
+            color: #e74c3c;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .form-control.invalid {
+            border-color: #e74c3c;
+        }
+
+        .form-control.invalid + .validation-message {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .cost-items {
+                grid-template-columns: 1fr;
+            }
+
+            .template-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏭 금형 원가관리 시스템 (SCMS)</h1>
+        <div class="subtitle">Simple Cost Management System - 에이치 에이 엔 테크</div>
+    </div>
+
+    <div class="breadcrumb">
+        <a href="#dashboard">🏠 대시보드</a> > <span>📊 원가 데이터 입력</span>
+    </div>
+
+    <div class="container">
+        <div class="form-container">
+            <div class="form-title">📊 원가 데이터 입력</div>
+
+            <!-- 빠른 템플릿 -->
+            <div class="quick-templates">
+                <strong>⚡ 빠른 템플릿 적용:</strong>
+                <div class="template-buttons">
+                    <button class="btn-template" onclick="applyTemplate('t0')">T0 가공비 템플릿</button>
+                    <button class="btn-template" onclick="applyTemplate('t1')">T1 원재료 템플릿</button>
+                    <button class="btn-template" onclick="applyTemplate('injection')">시사출비 템플릿</button>
+                    <button class="btn-template" onclick="clearForm()">🗑️ 전체 초기화</button>
+                </div>
+            </div>
+
+            <form id="costForm">
+                <div class="form-grid">
+                    <!-- 기본 정보 -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            📋 기본 정보
+                        </div>
+
+                        <div class="form-group">
+                            <label for="moldType">금형 구분 <span class="required">*</span></label>
+                            <select id="moldType" class="form-control" required>
+                                <option value="">선택하세요</option>
+                                <option value="T0">T0 (가공비)</option>
+                                <option value="T1">T1 (원재료)</option>
+                                <option value="부재료">부재료</option>
+                                <option value="시사출비">시사출비</option>
+                                <option value="기타">기타</option>
+                            </select>
+                            <div class="validation-message">금형 구분을 선택해주세요.</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="projectName">프로젝트명 <span class="required">*</span></label>
+                            <input type="text" id="projectName" class="form-control" placeholder="예: 2025-HAN-001" required>
+                            <div class="validation-message">프로젝트명을 입력해주세요.</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="partName">부품명</label>
+                            <input type="text" id="partName" class="form-control" placeholder="예: 차량용 플라스틱 부품">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="registDate">등록일 <span class="required">*</span></label>
+                            <input type="date" id="registDate" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <!-- 생산 정보 -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            🏭 생산 정보
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quantity">생산 수량</label>
+                            <div class="input-group">
+                                <input type="number" id="quantity" class="form-control" placeholder="1000" min="1">
+                                <span class="input-addon">개</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cavity">캐비티 수</label>
+                            <div class="input-group">
+                                <input type="number" id="cavity" class="form-control" placeholder="4" min="1">
+                                <span class="input-addon">cavity</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="materialType">소재</label>
+                            <select id="materialType" class="form-control">
+                                <option value="">선택하세요</option>
+                                <option value="PP">PP (폴리프로필렌)</option>
+                                <option value="PE">PE (폴리에틸렌)</option>
+                                <option value="ABS">ABS</option>
+                                <option value="PC">PC (폴리카보네이트)</option>
+                                <option value="기타">기타</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="manager">담당자</label>
+                            <input type="text" id="manager" class="form-control" placeholder="김철수">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 원가 구성 -->
+                <div class="form-section cost-breakdown">
+                    <div class="section-title">
+                        💰 원가 구성 상세
+                    </div>
+
+                    <div class="alert alert-info">
+                        ℹ️ 각 항목별로 실제 소요된 비용을 입력해주세요. 빈 항목은 자동으로 0원으로 처리됩니다.
+                    </div>
+
+                    <div class="cost-items">
+                        <div class="cost-item">
+                            <label for="designCost">설계비</label>
+                            <div class="input-group">
+                                <input type="number" id="designCost" class="form-control cost-input" placeholder="0" min="0">
+                                <span class="input-addon">만원</span>
+                            </div>
+                        </div>
+
+                        <div class="cost-item">
+                            <label for="materialCost">원재료비</label>
+                            <div class="input-group">
+                                <input type="number" id="materialCost" class="form-control cost-input" placeholder="0" min="0">
+                                <span class="input-addon">만원</span>
+                            </div>
+                        </div>
+
+                        <div class="cost-item">
+                            <label for="processingCost">가공비</label>
+                            <div class="input-group">
+                                <input type="number" id="processingCost" class="form-control cost-input" placeholder="0" min="0">
+                                <span class="input-addon">만원</span>
+                            </div>
+                        </div>
+
+                        <div class="cost-item">
+                            <label for="assemblyCost">조립비</label>
+                            <div class="input-group">
+                                <input type="number" id="assemblyCost" class="form-control cost-input" placeholder="0" min="0">
+                                <span class="input-addon">만원</span>
+                            </div>
+                        </div>
+
+                        <div class="cost-item">
+                            <label for="testCost">시사출비</label>
+                            <div class="input-group">
+                                <input type="number" id="testCost" class="form-control cost-input" placeholder="0" min="0">
+                                <span class="input-addon">만원</span>
+                            </div>
+                        </div>
+
+                        <div class="cost-item">
+                            <label for="laborCost">인건비</label>
+                            <div class="input-group">
+                                <input type="number" id="laborCost" class="form-control cost-input" placeholder="0" min="0">
+                                <span class="input-addon">만원</span>
+                            </div>
+                        </div>
+
+                        <div class="cost-item">
+                            <label for="overheadCost">간접비</label>
+                            <div class="input-group">
+                                <input type="number" id="overheadCost" class="form-control cost-input" placeholder="0" min="0">
+                                <span class="input-addon">만원</span>
+                            </div>
+                        </div>
+
+                        <div class="cost-item">
+                            <label for="etcCost">기타비용</label>
+                            <div class="input-group">
+                                <input type="number" id="etcCost" class="form-control cost-input" placeholder="0" min="0">
+                                <span class="input-addon">만원</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 총 비용 요약 -->
+                    <div class="summary-box">
+                        <div class="summary-title">💵 총 원가 합계</div>
+                        <div class="summary-amount" id="totalCost">₩ 0 만원</div>
+                    </div>
+                </div>
+
+                <!-- 메모 -->
+                <div class="form-section">
+                    <div class="section-title">
+                        📝 메모 및 특이사항
+                    </div>
+                    <textarea id="memo" class="form-control" rows="4" placeholder="원가 산정시 특이사항이나 참고할 내용을 입력해주세요..."></textarea>
+                </div>
+
+                <!-- 버튼 그룹 -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="goBack()">
+                        ← 취소
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="previewData()">
+                        👁️ 미리보기
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        💾 저장하기
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 현재 날짜 설정
+        document.getElementById('registDate').value = new Date().toISOString().split('T')[0];
+
+        // 실시간 총 비용 계산
+        const costInputs = document.querySelectorAll('.cost-input');
+        costInputs.forEach(input => {
+            input.addEventListener('input', calculateTotal);
+        });
+
+        function calculateTotal() {
+            let total = 0;
+            costInputs.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                total += value;
+            });
+
+            document.getElementById('totalCost').textContent = `₩ ${total.toLocaleString()} 만원`;
+
+            // 색상 변경 (비용에 따라)
+            const summaryBox = document.querySelector('.summary-box');
+            if (total > 300) {
+                summaryBox.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+            } else if (total > 200) {
+                summaryBox.style.background = 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)';
+            } else {
+                summaryBox.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }
+        }
+
+        // 템플릿 적용
+        function applyTemplate(type) {
+            clearForm();
+
+            switch(type) {
+                case 't0':
+                    document.getElementById('moldType').value = 'T0';
+                    document.getElementById('processingCost').value = '150';
+                    document.getElementById('laborCost').value = '35';
+                    document.getElementById('overheadCost').value = '20';
+                    break;
+                case 't1':
+                    document.getElementById('moldType').value = 'T1';
+                    document.getElementById('materialCost').value = '200';
+                    document.getElementById('processingCost').value = '50';
+                    document.getElementById('laborCost').value = '28';
+                    break;
+                case 'injection':
+                    document.getElementById('moldType').value = '시사출비';
+                    document.getElementById('testCost').value = '120';
+                    document.getElementById('materialCost').value = '30';
+                    document.getElementById('laborCost').value = '25';
+                    break;
+            }
+            calculateTotal();
+        }
+
+        // 폼 초기화
+        function clearForm() {
+            document.getElementById('costForm').reset();
+            document.getElementById('registDate').value = new Date().toISOString().split('T')[0];
+            calculateTotal();
+        }
+
+        // 폼 유효성 검사
+        function validateForm() {
+            const requiredFields = document.querySelectorAll('[required]');
+            let isValid = true;
+
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('invalid');
+                    isValid = false;
+                } else {
+                    field.classList.remove('invalid');
+                }
+            });
+
+            return isValid;
+        }
+
+        // 미리보기
+        function previewData() {
+            if (!validateForm()) {
+                alert('필수 항목을 모두 입력해주세요.');
+                return;
+            }
+
+            const data = {
+                moldType: document.getElementById('moldType').value,
+                projectName: document.getElementById('projectName').value,
+                partName: document.getElementById('partName').value || '미입력',
+                registDate: document.getElementById('registDate').value,
+                quantity: document.getElementById('quantity').value || '미입력',
+                totalCost: document.getElementById('totalCost').textContent
+            };
+
+            alert(`미리보기:
+
+금형구분: ${data.moldType}
+프로젝트: ${data.projectName}
+부품명: ${data.partName}
+등록일: ${data.registDate}
+생산수량: ${data.quantity}
+총원가: ${data.totalCost}`);
+        }
+
+        // 뒤로가기
+        function goBack() {
+            if (confirm('입력한 데이터가 사라집니다. 정말 취소하시겠습니까?')) {
+                window.history.back();
+            }
+        }
+
+        // 폼 제출
+        document.getElementById('costForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!validateForm()) {
+                alert('필수 항목을 모두 입력해주세요.');
+                return;
+            }
+
+            // 실제로는 서버로 데이터 전송
+            alert('원가 데이터가 성공적으로 저장되었습니다!');
+
+            // 대시보드로 이동 (실제 구현시)
+            // window.location.href = 'dashboard.html';
+        });
+
+        // 초기 계산
+        calculateTotal();
+    </script>
+</body>
+</html>

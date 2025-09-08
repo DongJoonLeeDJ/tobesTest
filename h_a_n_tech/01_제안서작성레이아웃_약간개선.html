@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>금형 원가관리 시스템 - SCMS</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .header .subtitle {
+            opacity: 0.9;
+            font-size: 0.9rem;
+            font-weight: 300;
+        }
+
+        .container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 빠른 실행 버튼 개선 */
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+
+        /* 요약 카드 정렬 개선 */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 2rem 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border-left: 4px solid;
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            transform: translate(30px, -30px);
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .summary-card.cost { 
+            border-left-color: #e74c3c;
+            background: linear-gradient(135deg, #fff 0%, #fdf2f2 100%);
+        }
+        .summary-card.production { 
+            border-left-color: #3498db;
+            background: linear-gradient(135deg, #fff 0%, #f0f8ff 100%);
+        }
+        .summary-card.efficiency { 
+            border-left-color: #2ecc71;
+            background: linear-gradient(135deg, #fff 0%, #f0fff0 100%);
+        }
+        .summary-card.target { 
+            border-left-color: #f39c12;
+            background: linear-gradient(135deg, #fff 0%, #fffaf0 100%);
+        }
+
+        .summary-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .summary-label {
+            color: #7f8c8d;
+            font-size: 0.95rem;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 대시보드 그리드 개선 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.08);
+            border: 1px solid #e8eef3;
+            transition: all 0.3s ease;
+            height: fit-content;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 35px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 0.75rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+
+        /* 테이블 개선 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e8eef3;
+            vertical-align: middle;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            font-weight: 600;
+            color: #2c3e50;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .data-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .status-normal { 
+            background-color: #d4edda; 
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-warning { 
+            background-color: #fff3cd; 
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .status-danger { 
+            background-color: #f8d7da; 
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* 입력 폼 개선 */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .input-group input,
+        .input-group select {
+            padding: 0.75rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+            background-color: #fafbfc;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #3498db;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        /* 진행률 바 개선 */
+        .progress-section {
+            margin: 1.5rem 0;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .progress-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db 0%, #2ecc71 100%);
+            transition: width 0.6s ease-in-out;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* 알림 카드 개선 */
+        .alert {
+            padding: 1.25rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+            position: relative;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left-color: #f39c12;
+            color: #856404;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-left-color: #2ecc71;
+            color: #155724;
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 1rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            background-color: #fafbfc;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        /* 반응형 개선 */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 1.5rem;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .summary-cards {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .quick-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                justify-content: center;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .summary-cards {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+            }
+
+            .summary-card {
+                padding: 1.5rem 1rem;
+            }
+
+            .summary-value {
+                font-size: 1.8rem;
+            }
+
+            .input-row {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .data-table {
+                font-size: 0.8rem;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏭 금형 원가관리 시스템 (SCMS)</h1>
+        <div class="subtitle">Simple Cost Management System - 에이치 에이 엔 테크</div>
+    </div>
+
+    <div class="container">
+        <!-- 빠른 실행 버튼 -->
+        <div class="quick-actions">
+            <button class="btn btn-primary">📊 원가 데이터 입력</button>
+            <button class="btn btn-success">📈 월간 보고서 생성</button>
+            <button class="btn btn-primary">💾 엑셀로 내보내기</button>
+        </div>
+
+        <!-- 요약 카드 -->
+        <div class="summary-cards">
+            <div class="summary-card cost">
+                <div class="summary-value">₩2,450만</div>
+                <div class="summary-label">이달 총 원가</div>
+            </div>
+            <div class="summary-card production">
+                <div class="summary-value">127개</div>
+                <div class="summary-label">생산 금형 수</div>
+            </div>
+            <div class="summary-card efficiency">
+                <div class="summary-value">92.3%</div>
+                <div class="summary-label">목표 달성률</div>
+            </div>
+            <div class="summary-card target">
+                <div class="summary-value">₩1,890만</div>
+                <div class="summary-label">목표 원가</div>
+            </div>
+        </div>
+
+        <!-- 대시보드 그리드 -->
+        <div class="dashboard-grid">
+            <!-- 월별 원가 추이 차트 -->
+            <div class="card">
+                <div class="card-title">📈 월별 원가 추이</div>
+                <div class="chart-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 금형별 원가 분포 -->
+            <div class="card">
+                <div class="card-title">🎯 금형별 원가 분포</div>
+                <div class="chart-container">
+                    <canvas id="moldCostChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 최근 원가 데이터 -->
+            <div class="card">
+                <div class="card-title">📋 최근 원가 현황</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>금형명</th>
+                            <th>원가</th>
+                            <th>상태</th>
+                            <th>등록일</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>T0-가공비</td>
+                            <td>₩185만</td>
+                            <td><span class="status-badge status-normal">정상</span></td>
+                            <td>2025.09.04</td>
+                        </tr>
+                        <tr>
+                            <td>T1-원재료</td>
+                            <td>₩278만</td>
+                            <td><span class="status-badge status-warning">검토필요</span></td>
+                            <td>2025.09.03</td>
+                        </tr>
+                        <tr>
+                            <td>부재료</td>
+                            <td>₩92만</td>
+                            <td><span class="status-badge status-normal">정상</span></td>
+                            <td>2025.09.03</td>
+                        </tr>
+                        <tr>
+                            <td>시사출비</td>
+                            <td>₩156만</td>
+                            <td><span class="status-badge status-danger">초과</span></td>
+                            <td>2025.09.02</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 빠른 데이터 입력 -->
+            <div class="card">
+                <div class="card-title">⚡ 빠른 데이터 입력</div>
+                <div class="input-group">
+                    <select>
+                        <option>금형 선택</option>
+                        <option>T0-가공비</option>
+                        <option>T1-원재료</option>
+                        <option>부재료</option>
+                        <option>시사출비</option>
+                    </select>
+                    <div class="input-row">
+                        <input type="number" placeholder="원가 금액 (만원)" style="flex: 2;">
+                        <input type="date" value="2025-09-08" style="flex: 1;">
+                    </div>
+                    <button class="btn btn-success" style="width: 100%;">💾 저장하기</button>
+                </div>
+            </div>
+
+            <!-- 목표 달성 현황 -->
+            <div class="card">
+                <div class="card-title">🎯 목표 달성 현황</div>
+                
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <span class="progress-label">원가 절감 목표</span>
+                        <span class="progress-value" style="color: #3498db;">92.3%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 92.3%"></div>
+                    </div>
+                </div>
+
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <span class="progress-label">품질 목표</span>
+                        <span class="progress-value" style="color: #f39c12;">87.5%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 87.5%; background: linear-gradient(90deg, #f39c12, #e67e22);"></div>
+                    </div>
+                </div>
+
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <span class="progress-label">납기 준수</span>
+                        <span class="progress-value" style="color: #2ecc71;">95.8%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 95.8%; background: linear-gradient(90deg, #2ecc71, #27ae60);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 알림 및 메모 -->
+            <div class="card">
+                <div class="card-title">🔔 알림 및 메모</div>
+                
+                <div class="alert alert-warning">
+                    <strong>⚠️ 주의사항</strong>
+                    시사출비 원가가 목표를 20% 초과했습니다. 검토가 필요합니다.
+                </div>
+                
+                <div class="alert alert-success">
+                    <strong>✅ 완료사항</strong>
+                    8월 원가 보고서가 성공적으로 생성되었습니다.
+                </div>
+                
+                <textarea placeholder="업무 메모를 입력하세요...&#10;&#10;• 검토 사항&#10;• 개선 계획&#10;• 특이사항 등"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 월별 원가 추이 차트
+        const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+        new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월'],
+                datasets: [{
+                    label: '실제 원가',
+                    data: [2200, 2350, 2180, 2420, 2300, 2150, 2380, 2290, 2450],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#3498db',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5
+                }, {
+                    label: '목표 원가',
+                    data: [2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000],
+                    borderColor: '#e74c3c',
+                    borderDash: [8, 4],
+                    fill: false,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#3498db',
+                        borderWidth: 1,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: false,
+                        min: 1800,
+                        ticks: {
+                            callback: function(value) {
+                                return '₩' + value + '만';
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+
+        // 금형별 원가 분포 차트
+        const moldCostCtx = document.getElementById('moldCostChart').getContext('2d');
+        new Chart(moldCostCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['T0-가공비', 'T1-원재료', '부재료', '시사출비', '기타'],
+                datasets: [{
+                    data: [185, 278, 92, 156, 89],
+                    backgroundColor: [
+                        '#3498db',
+                        '#e74c3c',
+                        '#2ecc71',
+                        '#f39c12',
+                        '#9b59b6'
+                    ],
+                    borderWidth: 3,
+                    borderColor: '#ffffff',
+                    hoverBorderWidth: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#ffffff',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: ₩${value}만 (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    </script>
+</body>
+</html>

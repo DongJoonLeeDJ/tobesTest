@@ -1,0 +1,1892 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCMS 통합 원가관리 시스템 - Ultimate Version</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .header .subtitle {
+            opacity: 0.9;
+            font-size: 0.9rem;
+            font-weight: 300;
+        }
+
+        .container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 탭 네비게이션 */
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .nav-tab.active {
+            background: white;
+            color: #3498db;
+            border-bottom: 3px solid #3498db;
+        }
+
+        .nav-tab:hover {
+            background: #e9ecef;
+        }
+
+        /* 탭 콘텐츠 */
+        .tab-content {
+            background: white;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+            min-height: 600px;
+        }
+
+        .tab-pane {
+            display: none;
+            padding: 2rem;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* 업로드 영역 */
+        .upload-zone {
+            border: 3px dashed #3498db;
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #f8fcff 0%, #e3f2fd 100%);
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+
+        .upload-zone.dragover {
+            border-color: #2ecc71;
+            background: linear-gradient(135deg, #f0fff4 0%, #e8f5e8 100%);
+        }
+
+        .upload-zone input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        /* 수동 입력 폼 */
+        .manual-form {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        .form-control {
+            padding: 0.75rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+            background: white;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .form-control.error {
+            border-color: #e74c3c;
+            background-color: #fdf2f2;
+        }
+
+        .cost-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .cost-amount {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* 진행률 바 */
+        .progress-container {
+            margin: 1rem 0;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* 요약 카드 (두 번째 파일 스타일 적용) */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 2rem 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid;
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(30px, -30px);
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .summary-card.cost {
+            border-left-color: #e74c3c;
+            background: linear-gradient(135deg, #fff 0%, #fdf2f2 100%);
+        }
+
+        .summary-card.production {
+            border-left-color: #3498db;
+            background: linear-gradient(135deg, #fff 0%, #f0f8ff 100%);
+        }
+
+        .summary-card.efficiency {
+            border-left-color: #2ecc71;
+            background: linear-gradient(135deg, #fff 0%, #f0fff0 100%);
+        }
+
+        .summary-card.target {
+            border-left-color: #f39c12;
+            background: linear-gradient(135deg, #fff 0%, #fffaf0 100%);
+        }
+
+        .summary-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .summary-label {
+            color: #7f8c8d;
+            font-size: 0.95rem;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 대시보드 그리드 (두 번째 파일 스타일) */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+.dashboard-card.wide {
+    grid-column: 1 / -1;
+}
+        .dashboard-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e8eef3;
+            transition: all 0.3s ease;
+            height: fit-content;
+        }
+
+        .dashboard-card:hover {
+            box-shadow: 0 8px 35px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 0.75rem;
+        }
+
+        /* 차트 컨테이너 */
+        .chart-container {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+
+        /* 진행률 섹션 (두 번째 파일에서 가져옴) */
+        .progress-section {
+            margin: 1.5rem 0;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .progress-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .progress-bar-custom {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-fill-custom {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db 0%, #2ecc71 100%);
+            transition: width 0.6s ease-in-out;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .progress-fill-custom::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                transparent 100%
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        /* 빠른 입력 위젯 */
+        .quick-input-widget {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* 데이터 테이블 */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+            vertical-align: middle;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            font-weight: 600;
+            color: #2c3e50;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .data-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .data-table tr.new-entry {
+            background-color: #e8f5e8;
+            animation: highlightNew 2s ease-out;
+        }
+
+        @keyframes highlightNew {
+            0% { background-color: #2ecc71; color: white; }
+            100% { background-color: #e8f5e8; color: inherit; }
+        }
+
+        .status-badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .status-normal {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* 알림 카드 (두 번째 파일에서 가져옴) */
+        .alert {
+            padding: 1.25rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+            position: relative;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left-color: #f39c12;
+            color: #856404;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-left-color: #2ecc71;
+            color: #155724;
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        /* 알림 시스템 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            background-color: #2ecc71;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            z-index: 2000;
+            transform: translateX(400px);
+            transition: transform 0.4s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background-color: #e74c3c;
+        }
+
+        .notification.warning {
+            background-color: #f39c12;
+        }
+
+        .notification.info {
+            background-color: #3498db;
+        }
+
+        /* 분류 필터 */
+        .filter-section {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.9rem;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        /* 텍스트에어리어 */
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 1rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            background-color: #fafbfc;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-cards {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .filter-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 알림 메시지 -->
+    <div id="notification" class="notification"></div>
+
+    <div class="header">
+        <h1>🏭 금형 원가관리 시스템 (SCMS)</h1>
+        <div class="subtitle">Excel 업로드 + 수동 입력 하이브리드 솔루션 - 에이치 에이 엔 테크</div>
+    </div>
+
+    <div class="container">
+        <!-- 탭 네비게이션 -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('upload')">
+                📤 엑셀 업로드
+            </button>
+            <button class="nav-tab" onclick="switchTab('manual')">
+                ✏️ 수동 입력
+            </button>
+            <button class="nav-tab" onclick="switchTab('dashboard')">
+                📊 대시보드
+            </button>
+            <button class="nav-tab" onclick="switchTab('list')">
+                📋 데이터 목록
+            </button>
+        </div>
+
+        <div class="tab-content">
+            <!-- 엑셀 업로드 탭 -->
+            <div id="upload" class="tab-pane active">
+                <h2 style="margin-bottom: 1.5rem;">📤 엑셀 파일 업로드</h2>
+
+                <div class="alert alert-info">
+                    <span>ℹ️</span>
+                    <div>
+                        <strong>업로드 가능한 파일:</strong> .xlsx, .xls 파일<br>
+                        <strong>필수 컬럼:</strong> 대분류, 중분류, 소분류, 금형명, 원가, 상태, 등록일
+                    </div>
+                </div>
+
+                <div class="upload-zone" id="uploadZone">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
+                    <h3>파일을 여기에 드래그하거나 클릭하여 선택하세요</h3>
+                    <p style="color: #7f8c8d; margin-top: 0.5rem;">
+                        Excel 파일(.xlsx, .xls)만 업로드 가능합니다
+                    </p>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls">
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        📂 파일 선택하기
+                    </button>
+                </div>
+
+                <div class="progress-container" id="progressContainer">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>업로드 진행률</span>
+                        <span id="progressText">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <div id="uploadResult"></div>
+
+                <!-- 샘플 파일 다운로드 -->
+                <div style="margin-top: 2rem; text-align: center;">
+                    <button class="btn btn-success" onclick="downloadSample()">
+                        📥 샘플 파일 다운로드
+                    </button>
+                </div>
+            </div>
+
+            <!-- 수동 입력 탭 -->
+            <div id="manual" class="tab-pane">
+                <h2 style="margin-bottom: 1.5rem;">✏️ 원가 데이터 수동 입력</h2>
+
+                <div class="alert alert-info">
+                    <span>💡</span>
+                    <div>
+                        <strong>빠른 입력 팁:</strong> 필수 항목만 입력하고 저장하면 됩니다. 나머지는 선택사항입니다.
+                    </div>
+                </div>
+
+                <form class="manual-form" id="manualForm">
+                    <!-- 분류 정보 -->
+                    <h3 style="margin-bottom: 1rem; color: #2c3e50;">🏷️ 분류 정보</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="majorCategory">대분류 <span class="required">*</span></label>
+                            <select id="majorCategory" class="form-control" required>
+                                <option value="">선택하세요</option>
+                                <option value="가공">가공</option>
+                                <option value="재료">재료</option>
+                                <option value="조립">조립</option>
+                                <option value="검사">검사</option>
+                                <option value="기타">기타</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="middleCategory">중분류 <span class="required">*</span></label>
+                            <select id="middleCategory" class="form-control" required>
+                                <option value="">대분류를 먼저 선택하세요</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="minorCategory">소분류 <span class="required">*</span></label>
+                            <select id="minorCategory" class="form-control" required>
+                                <option value="">중분류를 먼저 선택하세요</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 기본 정보 -->
+                    <h3 style="margin-bottom: 1rem; color: #2c3e50;">📋 기본 정보</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="moldName">금형명 <span class="required">*</span></label>
+                            <input type="text" id="moldName" class="form-control" placeholder="예: T0-가공비" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cost">원가 <span class="required">*</span></label>
+                            <input type="number" id="cost" class="form-control" placeholder="만원 단위" min="0" step="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="status">상태</label>
+                            <select id="status" class="form-control">
+                                <option value="정상">정상</option>
+                                <option value="검토필요">검토필요</option>
+                                <option value="초과">초과</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="registDate">등록일 <span class="required">*</span></label>
+                            <input type="date" id="registDate" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <!-- 추가 정보 -->
+                    <h3 style="margin-bottom: 1rem; color: #2c3e50;">📝 추가 정보 (선택)</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="projectName">프로젝트명</label>
+                            <input type="text" id="projectName" class="form-control" placeholder="예: 2025-HAN-001">
+                        </div>
+                        <div class="form-group">
+                            <label for="manager">담당자</label>
+                            <input type="text" id="manager" class="form-control" placeholder="예: 김철수">
+                        </div>
+                        <div class="form-group">
+                            <label for="quantity">수량</label>
+                            <input type="number" id="quantity" class="form-control" placeholder="개" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="unit">단위</label>
+                            <select id="unit" class="form-control">
+                                <option value="개">개</option>
+                                <option value="세트">세트</option>
+                                <option value="톤">톤</option>
+                                <option value="kg">kg</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 메모 -->
+                    <div class="form-group">
+                        <label for="memo">메모 및 특이사항</label>
+                        <textarea id="memo" class="form-control" rows="3" placeholder="추가 정보나 특이사항을 입력하세요..."></textarea>
+                    </div>
+
+                    <!-- 비용 요약 -->
+                    <div class="cost-summary">
+                        <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">입력된 원가</div>
+                        <div class="cost-amount" id="costDisplay">₩0 만원</div>
+                    </div>
+
+                    <!-- 액션 버튼 -->
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="clearManualForm()">
+                            🗑️ 초기화
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="previewManualData()">
+                            👁️ 미리보기
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            💾 저장하기
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 상세 대시보드 탭 -->
+            <div id="dashboard" class="tab-pane">
+                <h2 style="margin-bottom: 1.5rem;">📊 원가 분석 대시보드</h2>
+
+                <!-- 분류 필터 -->
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label>대분류:</label>
+                        <select class="filter-select" id="majorFilter" onchange="updateFilters()">
+                            <option value="">전체</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>중분류:</label>
+                        <select class="filter-select" id="middleFilter" onchange="updateFilters()">
+                            <option value="">전체</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>소분류:</label>
+                        <select class="filter-select" id="minorFilter" onchange="updateFilters()">
+                            <option value="">전체</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success" onclick="exportFilteredData()">
+                        💾 현재 데이터 내보내기
+                    </button>
+                </div>
+
+                <!-- 요약 카드 (두 번째 파일 스타일) -->
+                <div class="summary-cards">
+                    <div class="summary-card cost">
+                        <div class="summary-value" id="totalCost">₩0</div>
+                        <div class="summary-label">이달 총 원가</div>
+                    </div>
+                    <div class="summary-card production">
+                        <div class="summary-value" id="totalCount">0개</div>
+                        <div class="summary-label">생산 금형 수</div>
+                    </div>
+                    <div class="summary-card efficiency">
+                        <div class="summary-value" id="efficiency">0%</div>
+                        <div class="summary-label">목표 달성률</div>
+                    </div>
+                    <div class="summary-card target">
+                        <div class="summary-value" id="targetCost">₩1,890만</div>
+                        <div class="summary-label">목표 원가</div>
+                    </div>
+                </div>
+
+                <!-- 대시보드 그리드 -->
+                <div class="dashboard-grid">
+                    <!-- 월별 원가 추이 차트 -->
+                    <div class="dashboard-card">
+                        <div class="card-title">📈 월별 원가 추이</div>
+                        <div class="chart-container">
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 금형별 원가 분포 -->
+                    <div class="dashboard-card">
+                        <div class="card-title">🎯 금형별 원가 분포</div>
+                        <div class="chart-container">
+                            <canvas id="moldCostChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 빠른 데이터 입력 위젯 -->
+                    <div class="dashboard-card">
+                        <div class="card-title">⚡ 빠른 데이터 입력</div>
+                        <div class="quick-input-widget">
+                            <div class="input-group">
+                                <select id="quickMoldType" class="form-control">
+                                    <option>금형 선택</option>
+                                    <option>T0-가공비</option>
+                                    <option>T1-원재료</option>
+                                    <option>부재료</option>
+                                    <option>시사출비</option>
+                                    <option>기타</option>
+                                </select>
+                                <div class="input-row">
+                                    <input type="date" id="quickDate" class="form-control" style="flex: 1">
+									   </div>
+                                <div class="input-row">
+                                    <input type="number" id="quickCost" class="form-control" placeholder="원가 금액 (만원)" style="flex: 2" min="0" step="1">
+                                </div>
+                                <button class="btn btn-success" style="width: 100%" onclick="quickSave()">
+                                    💾 저장하기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 최근 원가 현황 테이블 -->
+                    <div class="dashboard-card wide">
+                        <div class="card-title">📋 최근 원가 현황</div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>금형명</th>
+                                    <th>원가</th>
+                                    <th>상태</th>
+                                    <th>등록일</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentDataTable">
+                                <tr>
+                                    <td>T0-가공비</td>
+                                    <td>₩185만</td>
+                                    <td><span class="status-badge status-normal">정상</span></td>
+                                    <td>2025.09.04</td>
+                                </tr>
+                                <tr>
+                                    <td>T1-원재료</td>
+                                    <td>₩278만</td>
+                                    <td><span class="status-badge status-warning">검토필요</span></td>
+                                    <td>2025.09.03</td>
+                                </tr>
+                                <tr>
+                                    <td>부재료</td>
+                                    <td>₩92만</td>
+                                    <td><span class="status-badge status-normal">정상</span></td>
+                                    <td>2025.09.03</td>
+                                </tr>
+                                <tr>
+                                    <td>시사출비</td>
+                                    <td>₩156만</td>
+                                    <td><span class="status-badge status-danger">초과</span></td>
+                                    <td>2025.09.02</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- 목표 달성 현황 -->
+                    <div class="dashboard-card">
+                        <div class="card-title">🎯 목표 달성 현황</div>
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">원가 절감 목표</span>
+                                <span class="progress-value" style="color: #3498db" id="costReductionProgress">92.3%</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill-custom" style="width: 92.3%" id="costReductionBar"></div>
+                            </div>
+                        </div>
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">품질 목표</span>
+                                <span class="progress-value" style="color: #f39c12" id="qualityProgress">87.5%</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill-custom" 
+                                     style="width: 87.5%; background: linear-gradient(90deg, #f39c12, #e67e22);"
+                                     id="qualityBar"></div>
+                            </div>
+                        </div>
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">납기 준수</span>
+                                <span class="progress-value" style="color: #2ecc71" id="deliveryProgress">95.8%</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill-custom" 
+                                     style="width: 95.8%; background: linear-gradient(90deg, #2ecc71, #27ae60);"
+                                     id="deliveryBar"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 알림 및 메모 -->
+                    <div class="dashboard-card">
+                        <div class="card-title">🔔 알림 및 메모</div>
+                        <div class="alert alert-warning">
+                            <strong>⚠️ 주의사항</strong>
+                            시사출비 원가가 목표를 20% 초과했습니다. 검토가 필요합니다.
+                        </div>
+                        <div class="alert alert-success">
+                            <strong>✅ 완료사항</strong>
+                            8월 원가 보고서가 성공적으로 생성되었습니다.
+                        </div>
+                        <textarea placeholder="업무 메모를 입력하세요...
+
+• 검토 사항
+• 개선 계획
+• 특이사항 등" id="dashboardMemo"></textarea>
+                    </div>
+					
+					
+                </div>
+            </div>
+
+            <!-- 데이터 목록 탭 -->
+            <div id="list" class="tab-pane">
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2>📋 원가 데이터 목록</h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <input type="text" placeholder="검색..." id="searchInput" 
+                                   style="padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;"
+                                   onkeyup="filterTable()">
+                            <button class="btn btn-success" onclick="exportToExcel()">
+                                📤 엑셀 내보내기
+                            </button>
+                        </div>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="dataTable">
+                            <thead>
+                                <tr>
+                                    <th>대분류</th>
+                                    <th>중분류</th>
+                                    <th>소분류</th>
+                                    <th>금형명</th>
+                                    <th>원가</th>
+                                    <th>상태</th>
+                                    <th>등록일</th>
+                                    <th>입력방식</th>
+                                    <th>작업</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr>
+                                    <td colspan="9" style="text-align: center; padding: 2rem; color: #7f8c8d;">
+                                        데이터를 업로드하거나 수동으로 입력해주세요
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let globalData = [];
+        let filteredData = [];
+        let charts = {};
+
+        // 분류 옵션 데이터
+        const categoryOptions = {
+            '가공': {
+                'T0': ['기본가공', '정밀가공', '특수가공'],
+                'T1': ['1차가공', '2차가공', '마감가공'],
+                '기타': ['시험가공', '샘플가공']
+            },
+            '재료': {
+                'T1': ['원재료', '부재료', '특수재료'],
+                '원자재': ['플라스틱', '금속', '고무'],
+                '소모품': ['나사', '접착제', '윤활유']
+            },
+            '조립': {
+                '기본': ['수동조립', '자동조립'],
+                '검사': ['외관검사', '기능검사'],
+                '포장': ['1차포장', '2차포장']
+            },
+            '검사': {
+                '품질': ['치수검사', '외관검사'],
+                '성능': ['기능검사', '내구성검사'],
+                '최종': ['출하검사', '샘플검사']
+            },
+            '기타': {
+                '관리': ['일반관리', '특별관리'],
+                '기타': ['기타1', '기타2']
+            }
+        };
+
+        // 알림 표시 함수
+        function showNotification(message, type = 'info', duration = 3000) {
+            const notification = document.getElementById('notification');
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+
+            notification.innerHTML = `${icons[type]} ${message}`;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, duration);
+        }
+
+        // 탭 전환
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'dashboard' && globalData.length > 0) {
+                setTimeout(() => {
+                    updateDetailedDashboard();
+                    initializeCharts();
+                }, 100);
+            }
+        }
+
+        // 분류 선택 업데이트
+        function updateCategoryOptions() {
+            const majorSelect = document.getElementById('majorCategory');
+            const middleSelect = document.getElementById('middleCategory');
+            const minorSelect = document.getElementById('minorCategory');
+
+            majorSelect.addEventListener('change', function() {
+                const selectedMajor = this.value;
+                middleSelect.innerHTML = '<option value="">선택하세요</option>';
+                minorSelect.innerHTML = '<option value="">중분류를 먼저 선택하세요</option>';
+
+                if (selectedMajor && categoryOptions[selectedMajor]) {
+                    Object.keys(categoryOptions[selectedMajor]).forEach(middle => {
+                        middleSelect.innerHTML += `<option value="${middle}">${middle}</option>`;
+                    });
+                }
+            });
+
+            middleSelect.addEventListener('change', function() {
+                const selectedMajor = majorSelect.value;
+                const selectedMiddle = this.value;
+                minorSelect.innerHTML = '<option value="">선택하세요</option>';
+
+                if (selectedMajor && selectedMiddle && categoryOptions[selectedMajor][selectedMiddle]) {
+                    categoryOptions[selectedMajor][selectedMiddle].forEach(minor => {
+                        minorSelect.innerHTML += `<option value="${minor}">${minor}</option>`;
+                    });
+                }
+            });
+        }
+
+        // 수동 입력 폼 초기화
+        function initializeManualForm() {
+            updateCategoryOptions();
+            document.getElementById('registDate').value = new Date().toISOString().split('T')[0];
+
+            document.getElementById('cost').addEventListener('input', function() {
+                const cost = parseInt(this.value) || 0;
+                document.getElementById('costDisplay').textContent = `₩${cost.toLocaleString()} 만원`;
+            });
+
+            document.getElementById('manualForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveManualData();
+            });
+        }
+
+        // 빠른 입력 초기화
+        function initializeQuickInput() {
+            document.getElementById('quickDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        // 수동 데이터 저장
+        function saveManualData() {
+            const formData = {
+                id: Date.now(),
+                major: document.getElementById('majorCategory').value,
+                middle: document.getElementById('middleCategory').value,
+                minor: document.getElementById('minorCategory').value,
+                moldName: document.getElementById('moldName').value,
+                cost: parseInt(document.getElementById('cost').value) || 0,
+                status: document.getElementById('status').value,
+                date: document.getElementById('registDate').value,
+                projectName: document.getElementById('projectName').value || '',
+                manager: document.getElementById('manager').value || '',
+                quantity: document.getElementById('quantity').value || '',
+                unit: document.getElementById('unit').value || '개',
+                memo: document.getElementById('memo').value || '',
+                inputMethod: '수동입력'
+            };
+
+            if (!formData.major || !formData.middle || !formData.minor || !formData.moldName || !formData.cost || !formData.date) {
+                showNotification('필수 항목을 모두 입력해주세요.', 'warning');
+                return;
+            }
+
+            globalData.unshift(formData);
+            filteredData = [...globalData];
+
+            updateFilterOptions();
+            updateTable();
+            updateDetailedDashboard();
+
+            showNotification('데이터가 성공적으로 저장되었습니다!', 'success');
+            clearManualForm();
+
+            setTimeout(() => {
+                switchTab('list');
+                const newRow = document.querySelector('#tableBody tr:first-child');
+                if (newRow) {
+                    newRow.classList.add('new-entry');
+                    setTimeout(() => {
+                        newRow.classList.remove('new-entry');
+                    }, 2000);
+                }
+            }, 500);
+        }
+
+        // 빠른 저장
+        function quickSave() {
+            const moldType = document.getElementById('quickMoldType').value;
+            const cost = parseInt(document.getElementById('quickCost').value) || 0;
+            const date = document.getElementById('quickDate').value;
+
+            if (moldType === '금형 선택' || !cost || !date) {
+                showNotification('모든 항목을 입력해주세요.', 'warning');
+                return;
+            }
+
+            const formData = {
+                id: Date.now(),
+                major: '가공',
+                middle: 'T0',
+                minor: '기본가공',
+                moldName: moldType,
+                cost: cost,
+                status: cost > 200 ? '검토필요' : '정상',
+                date: date,
+                inputMethod: '빠른입력'
+            };
+
+            globalData.unshift(formData);
+            filteredData = [...globalData];
+
+            // 빠른 입력 폼 초기화
+            document.getElementById('quickMoldType').value = '금형 선택';
+            document.getElementById('quickCost').value = '';
+
+            updateFilterOptions();
+            updateTable();
+            updateDetailedDashboard();
+            updateRecentTable();
+
+            showNotification('빠른 입력이 완료되었습니다!', 'success');
+        }
+
+        // 최근 데이터 테이블 업데이트
+        function updateRecentTable() {
+            const tbody = document.getElementById('recentDataTable');
+            const recentData = globalData.slice(0, 4); // 최근 4개만
+
+            if (recentData.length > 0) {
+                tbody.innerHTML = recentData.map(item => `
+                    <tr>
+                        <td>${item.moldName}</td>
+                        <td>₩${item.cost}만</td>
+                        <td><span class="status-badge ${getStatusClass(item.status)}">${item.status}</span></td>
+                        <td>${item.date}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // 수동 폼 초기화
+        function clearManualForm() {
+            document.getElementById('manualForm').reset();
+            document.getElementById('registDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('costDisplay').textContent = '₩0 만원';
+
+            document.getElementById('middleCategory').innerHTML = '<option value="">대분류를 먼저 선택하세요</option>';
+            document.getElementById('minorCategory').innerHTML = '<option value="">중분류를 먼저 선택하세요</option>';
+        }
+
+        // 수동 데이터 미리보기
+        function previewManualData() {
+            const major = document.getElementById('majorCategory').value;
+            const middle = document.getElementById('middleCategory').value;
+            const minor = document.getElementById('minorCategory').value;
+            const moldName = document.getElementById('moldName').value;
+            const cost = document.getElementById('cost').value;
+            const status = document.getElementById('status').value;
+            const date = document.getElementById('registDate').value;
+
+            if (!major || !middle || !minor || !moldName || !cost || !date) {
+                showNotification('필수 항목을 모두 입력해주세요.', 'warning');
+                return;
+            }
+
+            const previewText = `
+미리보기:
+
+분류: ${major} > ${middle} > ${minor}
+금형명: ${moldName}
+원가: ₩${parseInt(cost).toLocaleString()}만원
+상태: ${status}
+등록일: ${date}
+            `.trim();
+
+            alert(previewText);
+        }
+
+        // 상세 대시보드 업데이트
+        function updateDetailedDashboard() {
+            if (filteredData.length === 0) {
+                // 기본 값으로 초기화
+                document.getElementById('totalCost').textContent = '₩0';
+                document.getElementById('totalCount').textContent = '0개';
+                document.getElementById('efficiency').textContent = '0%';
+                return;
+            }
+
+            const totalCost = filteredData.reduce((sum, item) => sum + item.cost, 0);
+            const totalCount = filteredData.length;
+            const targetCost = 1890; // 목표 원가 (만원)
+            const efficiency = Math.min(100, Math.round((targetCost / (totalCost || 1)) * 100));
+
+            document.getElementById('totalCost').textContent = '₩' + totalCost.toLocaleString() + '만';
+            document.getElementById('totalCount').textContent = totalCount + '개';
+            document.getElementById('efficiency').textContent = efficiency + '%';
+
+            // 진행률 업데이트
+            updateProgressBars(efficiency);
+        }
+
+        // 진행률 바 업데이트
+        function updateProgressBars(efficiency) {
+            const costReductionProgress = Math.min(100, efficiency);
+            const qualityProgress = Math.min(100, efficiency - 5);
+            const deliveryProgress = Math.min(100, efficiency + 3);
+
+            document.getElementById('costReductionProgress').textContent = costReductionProgress + '%';
+            document.getElementById('costReductionBar').style.width = costReductionProgress + '%';
+
+            document.getElementById('qualityProgress').textContent = qualityProgress + '%';
+            document.getElementById('qualityBar').style.width = qualityProgress + '%';
+
+            document.getElementById('deliveryProgress').textContent = deliveryProgress + '%';
+            document.getElementById('deliveryBar').style.width = deliveryProgress + '%';
+        }
+
+        // 차트 초기화
+        function initializeCharts() {
+            // 월별 원가 추이 차트
+            const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+            if (charts.monthly) {
+                charts.monthly.destroy();
+            }
+
+            charts.monthly = new Chart(monthlyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월'],
+                    datasets: [
+                        {
+                            label: '실제 원가',
+                            data: [2200, 2350, 2180, 2420, 2300, 2150, 2380, 2290, filteredData.reduce((sum, item) => sum + item.cost, 0) || 2450],
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#3498db',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                        },
+                        {
+                            label: '목표 원가',
+                            data: [2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000],
+                            borderColor: '#e74c3c',
+                            borderDash: [8, 4],
+                            fill: false,
+                            pointRadius: 0,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                            },
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#3498db',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                        },
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false,
+                            },
+                        },
+                        y: {
+                            beginAtZero: false,
+                            min: 1800,
+                            ticks: {
+                                callback: function (value) {
+                                    return '₩' + value + '만';
+                                },
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)',
+                            },
+                        },
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                },
+            });
+
+            // 금형별 원가 분포 차트
+            const moldCostCtx = document.getElementById('moldCostChart').getContext('2d');
+            if (charts.distribution) {
+                charts.distribution.destroy();
+            }
+
+            // 실제 데이터가 있으면 사용, 없으면 샘플 데이터 사용
+            let chartData, chartLabels;
+            if (filteredData.length > 0) {
+                const costByMold = {};
+                filteredData.forEach(item => {
+                    costByMold[item.moldName] = (costByMold[item.moldName] || 0) + item.cost;
+                });
+                chartLabels = Object.keys(costByMold);
+                chartData = Object.values(costByMold);
+            } else {
+                chartLabels = ['T0-가공비', 'T1-원재료', '부재료', '시사출비', '기타'];
+                chartData = [185, 278, 92, 156, 89];
+            }
+
+            charts.distribution = new Chart(moldCostCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        {
+                            data: chartData,
+                            backgroundColor: [
+                                '#3498db',
+                                '#e74c3c',
+                                '#2ecc71',
+                                '#f39c12',
+                                '#9b59b6',
+                            ],
+                            borderWidth: 3,
+                            borderColor: '#ffffff',
+                            hoverBorderWidth: 5,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: {
+                                    size: 12,
+                                },
+                            },
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#ffffff',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function (context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ₩${value}만 (${percentage}%)`;
+                                },
+                            },
+                        },
+                    },
+                    cutout: '60%',
+                },
+            });
+        }
+
+        // 엑셀 업로드 관련 함수들 (기존과 동일)
+        function initializeUpload() {
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('dragover');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+        }
+
+        function handleFile(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/i)) {
+                showAlert('Excel 파일만 업로드 가능합니다.', 'error');
+                return;
+            }
+
+            showProgress(true);
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    processExcelData(e.target.result);
+                } catch (error) {
+                    showAlert('파일 처리 중 오류가 발생했습니다: ' + error.message, 'error');
+                    showProgress(false);
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        function processExcelData(data) {
+            const workbook = XLSX.read(data, { type: 'binary' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+
+            if (rows.length < 2) {
+                showAlert('데이터가 없습니다.', 'error');
+                showProgress(false);
+                return;
+            }
+
+            const headers = rows[0].map(h => String(h).trim());
+            const requiredColumns = ['대분류', '중분류', '소분류', '금형명', '원가', '상태', '등록일'];
+            const columnIndexes = {};
+
+            requiredColumns.forEach(col => {
+                const index = headers.indexOf(col);
+                if (index === -1) {
+                    showAlert(`필수 컬럼 '${col}'이 없습니다.`, 'error');
+                    showProgress(false);
+                    return;
+                }
+                columnIndexes[col] = index;
+            });
+
+            const parsedData = [];
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row[columnIndexes['금형명']] || !row[columnIndexes['원가']]) continue;
+
+                const costStr = String(row[columnIndexes['원가']]).replace(/[^\d]/g, '');
+                const cost = parseInt(costStr) || 0;
+
+                parsedData.push({
+                    id: Date.now() + i,
+                    major: String(row[columnIndexes['대분류']] || ''),
+                    middle: String(row[columnIndexes['중분류']] || ''),
+                    minor: String(row[columnIndexes['소분류']] || ''),
+                    moldName: String(row[columnIndexes['금형명']]),
+                    cost: cost,
+                    status: String(row[columnIndexes['상태']] || '정상'),
+                    date: String(row[columnIndexes['등록일']] || new Date().toISOString().split('T')[0]),
+                    inputMethod: '엑셀업로드'
+                });
+            }
+
+            globalData = [...parsedData, ...globalData];
+            filteredData = [...globalData];
+
+            animateProgress(() => {
+                showAlert(`${parsedData.length}건의 데이터가 성공적으로 업로드되었습니다!`, 'success');
+                updateFilterOptions();
+                updateTable();
+                updateDetailedDashboard();
+                updateRecentTable();
+                showProgress(false);
+            });
+        }
+
+        function showProgress(show) {
+            document.getElementById('progressContainer').style.display = show ? 'block' : 'none';
+            if (!show) {
+                document.getElementById('progressFill').style.width = '0%';
+                document.getElementById('progressText').textContent = '0%';
+            }
+        }
+
+        function animateProgress(callback) {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(callback, 500);
+                }
+                document.getElementById('progressFill').style.width = progress + '%';
+                document.getElementById('progressText').textContent = Math.round(progress) + '%';
+            }, 100);
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span>
+                <span>${message}</span>
+            `;
+
+            const result = document.getElementById('uploadResult');
+            result.innerHTML = '';
+            result.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        function updateFilterOptions() {
+            const majors = [...new Set(globalData.map(item => item.major))].filter(Boolean);
+            const middles = [...new Set(globalData.map(item => item.middle))].filter(Boolean);
+            const minors = [...new Set(globalData.map(item => item.minor))].filter(Boolean);
+
+            updateSelectOptions('majorFilter', majors);
+            updateSelectOptions('middleFilter', middles);
+            updateSelectOptions('minorFilter', minors);
+        }
+
+        function updateSelectOptions(selectId, options) {
+            const select = document.getElementById(selectId);
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">전체</option>';
+
+            options.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                select.appendChild(optionElement);
+            });
+
+            if (options.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        function updateFilters() {
+            const majorFilter = document.getElementById('majorFilter').value;
+            const middleFilter = document.getElementById('middleFilter').value;
+            const minorFilter = document.getElementById('minorFilter').value;
+
+            filteredData = globalData.filter(item => {
+                return (!majorFilter || item.major === majorFilter) &&
+                       (!middleFilter || item.middle === middleFilter) &&
+                       (!minorFilter || item.minor === minorFilter);
+            });
+
+            updateTable();
+            updateDetailedDashboard();
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('tableBody');
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 2rem; color: #7f8c8d;">데이터가 없습니다</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filteredData.map(item => `
+                <tr>
+                    <td>${item.major}</td>
+                    <td>${item.middle}</td>
+                    <td>${item.minor}</td>
+                    <td>${item.moldName}</td>
+                    <td>₩${item.cost.toLocaleString()}만</td>
+                    <td><span class="status-badge ${getStatusClass(item.status)}">${item.status}</span></td>
+                    <td>${item.date}</td>
+                    <td><span style="font-size: 0.8em; color: #666;">${item.inputMethod || '엑셀업로드'}</span></td>
+                    <td>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-edit" onclick="editItem(${item.id})">수정</button>
+                            <button class="btn btn-delete" onclick="deleteItem(${item.id})">삭제</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case '정상': return 'status-normal';
+                case '초과': return 'status-danger';
+                default: return 'status-warning';
+            }
+        }
+
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#tableBody tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        function exportToExcel() {
+            if (filteredData.length === 0) {
+                showNotification('내보낼 데이터가 없습니다.', 'warning');
+                return;
+            }
+
+            const exportData = [
+                ['대분류', '중분류', '소분류', '금형명', '원가', '상태', '등록일', '입력방식']
+            ];
+
+            filteredData.forEach(item => {
+                exportData.push([
+                    item.major, item.middle, item.minor, item.moldName,
+                    item.cost, item.status, item.date, item.inputMethod || '엑셀업로드'
+                ]);
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            XLSX.utils.book_append_sheet(wb, ws, "원가데이터");
+
+            const fileName = `SCMS_원가관리데이터_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+
+            showNotification('엑셀 파일이 다운로드되었습니다!', 'success');
+        }
+
+        function downloadSample() {
+            const sampleData = [
+                ['대분류', '중분류', '소분류', '금형명', '원가', '상태', '등록일'],
+                ['가공', 'T0', '기본가공', '시사출비', '50', '정상', '2025-09-08'],
+                ['재료', 'T1', '원재료', '부재료', '5000', '검토필요', '2025-09-08'],
+                ['가공', 'T0', '정밀가공', 'T0-가공비', '185', '정상', '2025-09-04'],
+                ['재료', 'T1', '특수재료', 'T1-원재료', '278', '검토필요', '2025-09-03']
+            ];
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(sampleData);
+            XLSX.utils.book_append_sheet(wb, ws, "샘플데이터");
+
+            XLSX.writeFile(wb, "SCMS_샘플파일.xlsx");
+            showNotification('샘플 파일이 다운로드되었습니다!', 'success');
+        }
+
+        function editItem(id) {
+            showNotification('수정 기능은 추후 구현 예정입니다.', 'info');
+        }
+
+        function deleteItem(id) {
+            if (confirm('정말 삭제하시겠습니까?')) {
+                globalData = globalData.filter(item => item.id !== id);
+                updateFilters();
+                updateDetailedDashboard();
+                updateRecentTable();
+                showNotification('데이터가 삭제되었습니다.', 'success');
+            }
+        }
+
+        function exportFilteredData() {
+            exportToExcel();
+        }
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeUpload();
+            initializeManualForm();
+            initializeQuickInput();
+            initializeCharts();
+            showNotification('SCMS 통합 원가관리 시스템이 준비되었습니다!', 'success', 4000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,709 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>월간 보고서 생성 - SCMS</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header .subtitle {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb {
+            background-color: #ecf0f1;
+            padding: 0.75rem 2rem;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .report-controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-group label {
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .form-control {
+            padding: 0.5rem;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-success {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+
+        .btn-warning {
+            background-color: #f39c12;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
+
+        .report-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .report-header {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .report-title {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .report-period {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .report-content {
+            padding: 2rem;
+        }
+
+        .summary-section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .summary-change {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .change-positive {
+            color: #2ecc71;
+        }
+
+        .change-negative {
+            color: #e74c3c;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .chart-container {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #495057;
+        }
+
+        .chart-canvas {
+            position: relative;
+            height: 300px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .data-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-excellent { background-color: #d4edda; color: #155724; }
+        .status-good { background-color: #cce5ff; color: #004085; }
+        .status-warning { background-color: #fff3cd; color: #856404; }
+        .status-danger { background-color: #f8d7da; color: #721c24; }
+
+        .insights-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+
+        .insights-title {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .insight-item {
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .export-actions {
+            text-align: center;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .print-only {
+            display: none;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            .print-only {
+                display: block;
+            }
+
+            .report-container {
+                box-shadow: none;
+                border: 1px solid #000;
+            }
+
+            .chart-canvas {
+                height: 250px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .report-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                justify-content: space-between;
+            }
+
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .export-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header no-print">
+        <h1>🏭 금형 원가관리 시스템 (SCMS)</h1>
+        <div class="subtitle">Simple Cost Management System - 에이치 에이 엔 테크</div>
+    </div>
+
+    <div class="breadcrumb no-print">
+        <a href="#dashboard">🏠 대시보드</a> > <span>📈 월간 보고서 생성</span>
+    </div>
+
+    <div class="container">
+        <!-- 보고서 생성 조건 -->
+        <div class="report-controls no-print">
+            <div class="control-group">
+                <label for="reportYear">📅 연도:</label>
+                <select id="reportYear" class="form-control">
+                    <option value="2025">2025년</option>
+                    <option value="2024">2024년</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="reportMonth">📆 월:</label>
+                <select id="reportMonth" class="form-control">
+                    <option value="9" selected>9월</option>
+                    <option value="8">8월</option>
+                    <option value="7">7월</option>
+                    <option value="6">6월</option>
+                    <option value="5">5월</option>
+                    <option value="4">4월</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="reportType">📊 보고서 유형:</label>
+                <select id="reportType" class="form-control">
+                    <option value="summary" selected>요약 보고서</option>
+                    <option value="detailed">상세 보고서</option>
+                    <option value="comparison">전월 비교</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary" onclick="generateReport()">
+                🔄 보고서 생성
+            </button>
+        </div>
+
+        <!-- 보고서 본문 -->
+        <div class="report-container" id="reportContent">
+            <div class="report-header">
+                <div class="report-title">월간 원가관리 보고서</div>
+                <div class="report-period">2025년 9월 (2025.09.01 ~ 2025.09.30)</div>
+                <div class="print-only" style="margin-top: 1rem; font-size: 0.9rem;">
+                    생성일: <span id="generateDate"></span> | 에이치 에이 엔 테크
+                </div>
+            </div>
+
+            <div class="report-content">
+                <!-- 요약 정보 -->
+                <div class="summary-section">
+                    <div class="section-title">📊 월간 주요 지표</div>
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <div class="summary-value">₩2,450만</div>
+                            <div class="summary-label">총 원가</div>
+                            <div class="summary-change change-positive">↑ 전월 대비 +8.2%</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-value">127개</div>
+                            <div class="summary-label">처리 건수</div>
+                            <div class="summary-change change-positive">↑ 전월 대비 +12건</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-value">92.3%</div>
+                            <div class="summary-label">목표 달성률</div>
+                            <div class="summary-change change-negative">↓ 전월 대비 -2.1%</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-value">₩19.3만</div>
+                            <div class="summary-label">건당 평균 원가</div>
+                            <div class="summary-change change-negative">↓ 전월 대비 -3.4%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 차트 영역 -->
+                <div class="chart-grid">
+                    <div class="chart-container">
+                        <div class="chart-title">📈 월별 원가 추이</div>
+                        <div class="chart-canvas">
+                            <canvas id="monthlyTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-title">🎯 금형별 원가 분포</div>
+                        <div class="chart-canvas">
+                            <canvas id="moldDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 상세 데이터 테이블 -->
+                <div class="summary-section">
+                    <div class="section-title">📋 금형별 상세 현황</div>
+                    <table class="data-table" id="detailTable">
+                        <thead>
+                            <tr>
+                                <th>금형 구분</th>
+                                <th>건수</th>
+                                <th>총 원가</th>
+                                <th>평균 원가</th>
+                                <th>목표 대비</th>
+                                <th>평가</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>T0-가공비</strong></td>
+                                <td>45건</td>
+                                <td>₩832만</td>
+                                <td>₩18.5만</td>
+                                <td>102.3%</td>
+                                <td><span class="status-badge status-warning">검토필요</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>T1-원재료</strong></td>
+                                <td>38건</td>
+                                <td>₩1,056만</td>
+                                <td>₩27.8만</td>
+                                <td>95.2%</td>
+                                <td><span class="status-badge status-good">양호</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>부재료</strong></td>
+                                <td>28건</td>
+                                <td>₩258만</td>
+                                <td>₩9.2만</td>
+                                <td>88.1%</td>
+                                <td><span class="status-badge status-excellent">우수</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>시사출비</strong></td>
+                                <td>16건</td>
+                                <td>₩304만</td>
+                                <td>₩19.0만</td>
+                                <td>112.4%</td>
+                                <td><span class="status-badge status-danger">초과</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- AI 인사이트 -->
+                <div class="insights-section">
+                    <div class="insights-title">🤖 AI 분석 인사이트</div>
+                    <div class="insight-item">
+                        <span>💡</span>
+                        <span>시사출비가 목표를 12.4% 초과했습니다. 공정 개선을 검토해보세요.</span>
+                    </div>
+                    <div class="insight-item">
+                        <span>📈</span>
+                        <span>부재료 원가가 11.9% 절감되어 가장 효율적인 관리를 보이고 있습니다.</span>
+                    </div>
+                    <div class="insight-item">
+                        <span>⚠️</span>
+                        <span>전월 대비 총 원가가 8.2% 증가했습니다. 주요 원인은 T1-원재료 단가 상승입니다.</span>
+                    </div>
+                    <div class="insight-item">
+                        <span>🎯</span>
+                        <span>목표 달성률 향상을 위해 시사출비 공정 표준화를 권장합니다.</span>
+                    </div>
+                </div>
+
+                <!-- 월별 상세 내역 -->
+                <div class="summary-section">
+                    <div class="section-title">📅 주요 이슈 및 특이사항</div>
+                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #3498db;">
+                        <h4 style="color: #2c3e50; margin-bottom: 1rem;">9월 주요 내용</h4>
+                        <ul style="margin-left: 1.5rem; line-height: 1.6;">
+                            <li><strong>원자재 가격 상승:</strong> PP 소재 단가가 전월 대비 5% 상승하여 T1-원재료 비용 증가</li>
+                            <li><strong>신규 프로젝트 추가:</strong> HAN-2025-003 프로젝트로 인한 시사출비 증가</li>
+                            <li><strong>공정 개선 효과:</strong> 부재료 처리 공정 개선으로 원가 11.9% 절감 성공</li>
+                            <li><strong>품질 향상:</strong> 불량률 0.8%로 전월(1.2%) 대비 개선</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 내보내기 액션 -->
+            <div class="export-actions no-print">
+                <div class="export-buttons">
+                    <button class="btn btn-success" onclick="exportToExcel()">
+                        📊 엑셀로 내보내기
+                    </button>
+                    <button class="btn btn-primary" onclick="window.print()">
+                        🖨️ PDF로 인쇄
+                    </button>
+                    <button class="btn btn-warning" onclick="shareReport()">
+                        📤 보고서 공유
+                    </button>
+                </div>
+                <div style="margin-top: 1rem; font-size: 0.9rem; color: #6c757d;">
+                    생성일시: <span id="createdAt"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 현재 날짜 설정
+        function updateDates() {
+            const now = new Date();
+            document.getElementById('generateDate').textContent = now.toLocaleDateString('ko-KR');
+            document.getElementById('createdAt').textContent = now.toLocaleString('ko-KR');
+        }
+
+        // 차트 생성
+        function createCharts() {
+            // 월별 추이 차트
+            const monthlyCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+            new Chart(monthlyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월'],
+                    datasets: [{
+                        label: '실제 원가',
+                        data: [2200, 2350, 2180, 2420, 2300, 2150, 2380, 2260, 2450],
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: '목표 원가',
+                        data: [2200, 2200, 2200, 2200, 2200, 2200, 2200, 2200, 2200],
+                        borderColor: '#e74c3c',
+                        borderDash: [5, 5],
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true }
+                    },
+                    scales: {
+                        y: { beginAtZero: false, min: 2000 }
+                    }
+                }
+            });
+
+            // 금형별 분포 차트
+            const distributionCtx = document.getElementById('moldDistributionChart').getContext('2d');
+            new Chart(distributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['T0-가공비', 'T1-원재료', '부재료', '시사출비'],
+                    datasets: [{
+                        data: [832, 1056, 258, 304],
+                        backgroundColor: [
+                            '#3498db',
+                            '#e74c3c',
+                            '#2ecc71',
+                            '#f39c12'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // 보고서 생성
+        function generateReport() {
+            const year = document.getElementById('reportYear').value;
+            const month = document.getElementById('reportMonth').value;
+            const type = document.getElementById('reportType').value;
+
+            // 실제로는 서버에서 데이터를 가져와야 함
+            alert(`${year}년 ${month}월 ${type} 보고서를 생성했습니다.`);
+            updateDates();
+        }
+
+        // 엑셀 내보내기
+        function exportToExcel() {
+            // 보고서 데이터 준비
+            const reportData = [
+                ['에이치 에이 엔 테크 - 월간 원가관리 보고서'],
+                ['생성일:', new Date().toLocaleDateString('ko-KR')],
+                ['기간:', '2025년 9월'],
+                [],
+                ['주요 지표'],
+                ['항목', '값', '전월 대비'],
+                ['총 원가', '2,450만원', '+8.2%'],
+                ['처리 건수', '127건', '+12건'],
+                ['목표 달성률', '92.3%', '-2.1%'],
+                ['건당 평균 원가', '19.3만원', '-3.4%'],
+                [],
+                ['금형별 상세 현황'],
+                ['금형 구분', '건수', '총 원가', '평균 원가', '목표 대비', '평가'],
+                ['T0-가공비', '45건', '832만원', '18.5만원', '102.3%', '검토필요'],
+                ['T1-원재료', '38건', '1,056만원', '27.8만원', '95.2%', '양호'],
+                ['부재료', '28건', '258만원', '9.2만원', '88.1%', '우수'],
+                ['시사출비', '16건', '304만원', '19.0만원', '112.4%', '초과']
+            ];
+
+            // 워크북 생성
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(reportData);
+
+            // 스타일 적용 (기본)
+            ws['!cols'] = [
+                {wch: 20}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 10}
+            ];
+
+            XLSX.utils.book_append_sheet(wb, ws, "월간보고서");
+
+            // 파일 다운로드
+            const fileName = `금형원가관리_월간보고서_${new Date().getFullYear()}_${String(new Date().getMonth() + 1).padStart(2, '0')}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+
+            alert('엑셀 파일이 다운로드되었습니다!');
+        }
+
+        // 보고서 공유
+        function shareReport() {
+            if (navigator.share) {
+                navigator.share({
+                    title: '월간 원가관리 보고서',
+                    text: '에이치 에이 엔 테크 2025년 9월 보고서',
+                    url: window.location.href
+                });
+            } else {
+                // 링크 복사
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    alert('보고서 링크가 클립보드에 복사되었습니다!');
+                });
+            }
+        }
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDates();
+            createCharts();
+        });
+    </script>
+</body>
+</html>
